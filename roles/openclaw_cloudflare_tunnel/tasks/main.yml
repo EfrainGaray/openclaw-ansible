@@ -15,13 +15,54 @@
     that:
       - openclaw_cloudflare_tunnel_name | length > 0
       - openclaw_cloudflare_tunnel_id | length > 0
-      - openclaw_cloudflare_tunnel_credentials_json | length > 0
       - openclaw_cloudflare_tunnel_ingress | length > 0
     fail_msg: >-
-      Set openclaw_cloudflare_tunnel_id, openclaw_cloudflare_tunnel_credentials_json
-      and at least one openclaw_cloudflare_tunnel_ingress route before enabling the role.
+      Set openclaw_cloudflare_tunnel_id and at least one
+      openclaw_cloudflare_tunnel_ingress route before enabling the role.
   when: openclaw_cloudflare_tunnel_enabled | bool
 
+- name: Validate inline credentials when role manages credentials file
+  ansible.builtin.assert:
+    that:
+      - openclaw_cloudflare_tunnel_credentials_json | length > 0
+    fail_msg: >-
+      openclaw_cloudflare_tunnel_manage_credentials_file=true requires
+      openclaw_cloudflare_tunnel_credentials_json.
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - openclaw_cloudflare_tunnel_manage_credentials_file | bool
+
+- name: Validate external credentials file path when inline write is disabled
+  ansible.builtin.assert:
+    that:
+      - openclaw_cloudflare_tunnel_credentials_file | length > 0
+    fail_msg: >-
+      openclaw_cloudflare_tunnel_manage_credentials_file=false requires
+      openclaw_cloudflare_tunnel_credentials_file pointing to an existing file.
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - not (openclaw_cloudflare_tunnel_manage_credentials_file | bool)
+
+- name: Check external credentials file exists
+  ansible.builtin.stat:
+    path: "{{ openclaw_cloudflare_tunnel_credentials_file }}"
+  register: openclaw_cloudflare_tunnel_credentials_file_stat
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - not (openclaw_cloudflare_tunnel_manage_credentials_file | bool)
+
+- name: Fail when external credentials file is missing
+  ansible.builtin.assert:
+    that:
+      - openclaw_cloudflare_tunnel_credentials_file_stat.stat.exists
+      - openclaw_cloudflare_tunnel_credentials_file_stat.stat.isreg
+    fail_msg: >-
+      Cloudflare credentials file not found at {{ openclaw_cloudflare_tunnel_credentials_file }}.
+      Either provide this file on host or set openclaw_cloudflare_tunnel_manage_credentials_file=true
+      with openclaw_cloudflare_tunnel_credentials_json.
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - not (openclaw_cloudflare_tunnel_manage_credentials_file | bool)
 - name: Validate Cloudflare ingress route schema
   ansible.builtin.assert:
     that:
@@ -101,7 +142,9 @@
     group: "{{ openclaw_cloudflare_tunnel_run_group }}"
     mode: '0600'
   no_log: true
-  when: openclaw_cloudflare_tunnel_enabled | bool
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - openclaw_cloudflare_tunnel_manage_credentials_file | bool
 
 - name: Render Cloudflare tunnel config
   ansible.builtin.template:

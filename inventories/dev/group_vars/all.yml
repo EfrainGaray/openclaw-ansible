@@ -97,17 +97,20 @@ openclaw_control_plane_profiles:
     nats_password: "{{ vault_openclaw_cp_nats_password_andrea | default('andrea-nats-local') }}"
 
 # Optional: expose local loopback services via Cloudflare Tunnel subdomains.
-# Keep disabled until tunnel credentials and public domain are configured in vault.yml.
-openclaw_cloudflare_domain: "example.com"
-openclaw_cloudflare_tunnel_enabled: false
-openclaw_cloudflare_tunnel_name: "zennook-openclaw"
+# This host reuses existing credentials file from /home/efra/.cloudflared.
+openclaw_cloudflare_domain: "hegga.cl"
+openclaw_cloudflare_tunnel_enabled: "{{ inventory_hostname == 'zennook' }}"
+openclaw_cloudflare_tunnel_name: "local1"
 openclaw_cloudflare_tunnel_run_user: efra
 openclaw_cloudflare_tunnel_run_group: efra
-openclaw_cloudflare_tunnel_id: "{{ vault_cloudflare_tunnel_id | default('') }}"
-openclaw_cloudflare_tunnel_credentials_json: "{{ vault_cloudflare_tunnel_credentials_json | default('') }}"
+openclaw_cloudflare_tunnel_id: "dab4c78a-4d51-43b1-957e-42f6aecbe10a"
+openclaw_cloudflare_tunnel_manage_credentials_file: false
+openclaw_cloudflare_tunnel_credentials_file: "/home/efra/.cloudflared/dab4c78a-4d51-43b1-957e-42f6aecbe10a.json"
 openclaw_cloudflare_tunnel_manage_dns: false
 openclaw_cloudflare_tunnel_ingress:
-  - hostname: "dev-main-dashboard.{{ openclaw_cloudflare_domain }}"
+  - hostname: "local1.{{ openclaw_cloudflare_domain }}"
+    service: "ssh://127.0.0.1:22"
+  - hostname: "openclaw.{{ openclaw_cloudflare_domain }}"
     service: "http://127.0.0.1:19011"
   - hostname: "efra-core-ingress.{{ openclaw_cloudflare_domain }}"
     service: "http://127.0.0.1:30101"

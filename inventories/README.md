@@ -29,6 +29,8 @@ Cloudflare subdomain exposure knobs:
 - `openclaw_cloudflare_tunnel_name`
 - `openclaw_cloudflare_tunnel_id`
 - `openclaw_cloudflare_tunnel_credentials_json` (from vault)
+- `openclaw_cloudflare_tunnel_manage_credentials_file` (set false to reuse existing credential file)
+- `openclaw_cloudflare_tunnel_credentials_file` (host path to existing `<uuid>.json`)
 - `openclaw_cloudflare_tunnel_ingress` (list of `hostname` + `service`)
 - `openclaw_cloudflare_tunnel_manage_dns` (optional route reconcile)
 

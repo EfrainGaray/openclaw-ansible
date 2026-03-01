@@ -36,6 +36,13 @@ openclaw_cloudflare_tunnel_ingress:
     service: "http://127.0.0.1:39101"
 ```
 
+If you already have tunnel credentials on host (like `/home/efra/.cloudflared/<uuid>.json`):
+
+```yaml
+openclaw_cloudflare_tunnel_manage_credentials_file: false
+openclaw_cloudflare_tunnel_credentials_file: "/home/efra/.cloudflared/<uuid>.json"
+```
+
 Set secrets in `inventories/<env>/group_vars/vault.yml`:
 
 ```yaml

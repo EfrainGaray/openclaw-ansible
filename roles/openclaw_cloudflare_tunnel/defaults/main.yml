@@ -15,6 +15,7 @@ openclaw_cloudflare_tunnel_credentials_file: >-
 
 openclaw_cloudflare_tunnel_id: ""
 openclaw_cloudflare_tunnel_credentials_json: ""
+openclaw_cloudflare_tunnel_manage_credentials_file: true
 openclaw_cloudflare_tunnel_metrics_port: 40500
 
 # List of public hostnames to expose through this tunnel.
