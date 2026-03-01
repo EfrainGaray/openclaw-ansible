@@ -1,0 +1,5 @@
+---
+vault_openclaw_gateway_token_prod_main: "replace-with-temp-token-prod-main"
+vault_openclaw_gateway_token_prod_rescue: "replace-with-temp-token-prod-rescue"
+vault_openai_api_key_prod: "replace-with-temp-openai-key-prod"
+vault_anthropic_api_key_prod: "replace-with-temp-anthropic-key-prod"

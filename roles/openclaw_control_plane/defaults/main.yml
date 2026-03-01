@@ -1,0 +1,40 @@
+---
+openclaw_control_plane_enabled: false
+openclaw_control_plane_manage_stack: true
+openclaw_control_plane_require_secrets: true
+openclaw_control_plane_runtime_root: /opt/openclaw/control-plane
+openclaw_control_plane_source_dir: "{{ playbook_dir }}/../control-plane"
+openclaw_control_plane_project_prefix: ocp
+openclaw_control_plane_default_nats_stream: OPENCLAW_TASKS
+
+# Modes:
+# - full: all services (router + broker + workers + observability)
+# - lite: direct/simple path (ingress + router-forced-main + worker-main + broker + control-api)
+openclaw_control_plane_profiles: []
+
+# Example:
+# openclaw_control_plane_profiles:
+#   - name: efra-core
+#     mode: full
+#     gateway_profile: dev-main
+#     project_dir: /opt/openclaw/control-plane/efra-core
+#     ingress_port: 30101
+#     control_api_port: 39101
+#     grafana_port: 31001
+#     prometheus_port: 39091
+#     telegram_bot_token: "{{ vault_telegram_bot_token_efra_core }}"
+#     telegram_default_chat_id: "{{ vault_telegram_default_chat_id_efra_core }}"
+#     postgres_password: "{{ vault_openclaw_cp_postgres_password_efra_core }}"
+#     nats_user: queue
+#     nats_password: "{{ vault_openclaw_cp_nats_password_efra_core }}"
+#
+#   - name: andrea
+#     mode: lite
+#     gateway_profile: andrea
+#     ingress_port: 30111
+#     control_api_port: 39111
+#     telegram_bot_token: "{{ vault_telegram_bot_token_andrea }}"
+#     telegram_default_chat_id: "{{ vault_telegram_default_chat_id_andrea }}"
+#     postgres_password: "{{ vault_openclaw_cp_postgres_password_andrea }}"
+#     nats_user: queue
+#     nats_password: "{{ vault_openclaw_cp_nats_password_andrea }}"

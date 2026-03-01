@@ -1,0 +1,32 @@
+---
+- name: Deploy OpenClaw enterprise topology
+  hosts: openclaw_gateway
+  become: true
+  strategy: linear
+  serial: "{{ openclaw_rollout_serial | default(1) }}"
+  ignore_unreachable: "{{ openclaw_ignore_unreachable | default(true) }}"
+  any_errors_fatal: false
+  max_fail_percentage: "{{ openclaw_max_fail_percentage | default(100) }}"
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  pre_tasks:
+    - name: Report unsupported OS hosts (skipping deployment roles)
+      ansible.builtin.debug:
+        msg: >-
+          Skipping OpenClaw roles on {{ inventory_hostname }} ({{ ansible_distribution }}
+          {{ ansible_distribution_version }}): supported distributions are Debian/Ubuntu/Fedora.
+      when: ansible_distribution not in ['Debian', 'Ubuntu', 'Fedora']
+
+  roles:
+    - role: openclaw
+      when: ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']
+    - role: openclaw_enterprise
+      when:
+        - openclaw_enterprise_enabled | bool
+        - ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']
+    - role: openclaw_control_plane
+      when:
+        - openclaw_control_plane_enabled | bool
+        - ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']
