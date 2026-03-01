@@ -8,7 +8,8 @@ openclaw_cloudflare_tunnel_service_name: "cloudflared-{{ openclaw_cloudflare_tun
 openclaw_cloudflare_tunnel_run_user: "{{ ansible_user | default('openclaw') }}"
 openclaw_cloudflare_tunnel_run_group: "{{ ansible_user | default('openclaw') }}"
 
-openclaw_cloudflare_tunnel_workdir: "/etc/openclaw/cloudflare/{{ openclaw_cloudflare_tunnel_name }}"
+openclaw_cloudflare_tunnel_workdir: >-
+  /home/{{ openclaw_cloudflare_tunnel_run_user }}/.openclaw-cloudflare/{{ openclaw_cloudflare_tunnel_name }}
 openclaw_cloudflare_tunnel_config_path: "{{ openclaw_cloudflare_tunnel_workdir }}/config.yml"
 openclaw_cloudflare_tunnel_credentials_file: >-
   {{ openclaw_cloudflare_tunnel_workdir }}/{{ openclaw_cloudflare_tunnel_id }}.json
