@@ -20,7 +20,7 @@ simulate_and_assert() {
   local ingress_port="$1"
   local control_port="$2"
   local profile_label="$3"
-  local payload resp task_id tasks_json
+  local payload resp task_id task_json status try
 
   payload=$(cat <<JSON
 {"text":"smoke test ${profile_label}","source":{"channel":"telegram","chatId":"local-sim","userId":"local-user"}}
@@ -31,11 +31,24 @@ JSON
   task_id="$(printf '%s' "${resp}" | sed -n 's/.*"taskId":"\([^"]*\)".*/\1/p')"
   [[ -n "${task_id}" ]] || die "Could not extract taskId from response (${profile_label}): ${resp}"
 
-  sleep 2
-  tasks_json="$(run_sudo curl -fsS "http://127.0.0.1:${control_port}/tasks?limit=10")"
-  printf '%s' "${tasks_json}" | grep -q "${task_id}" || die "Task ${task_id} not found in control API (${profile_label})."
+  status=""
+  for try in {1..30}; do
+    task_json="$(run_sudo curl -fsS "http://127.0.0.1:${control_port}/tasks/${task_id}" 2>/dev/null || true)"
+    if [[ -n "${task_json}" ]]; then
+      status="$(printf '%s' "${task_json}" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+      if [[ -n "${status}" && "${status}" != "PENDING" && "${status}" != "QUEUED" && "${status}" != "RUNNING" ]]; then
+        break
+      fi
+    fi
+    sleep 1
+  done
 
-  log "Queue flow OK (${profile_label}) taskId=${task_id}"
+  [[ -n "${status}" ]] || die "Task ${task_id} did not become visible in control API (${profile_label})."
+  if [[ "${status}" == "PENDING" || "${status}" == "QUEUED" || "${status}" == "RUNNING" ]]; then
+    die "Task ${task_id} did not reach terminal status in time (${profile_label}). Last status=${status}"
+  fi
+
+  log "Queue flow OK (${profile_label}) taskId=${task_id} status=${status}"
 }
 
 log "Checking docker compose stack status."

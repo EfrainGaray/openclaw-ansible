@@ -15,6 +15,9 @@ need_cmd "${ansible_bin}"
 
 [[ -f "${inventory_file}" ]] || die "Inventory not found: ${inventory_file}"
 
+log "Validating required secrets before install."
+"${SCRIPT_DIR}/validate-secrets.sh"
+
 extra_args=()
 if [[ -f "${vault_file}" ]]; then
   extra_args+=( -e "@${vault_file}" )

@@ -148,7 +148,7 @@ ansible-playbook playbook.yml --ask-become-pass
 
 ## Documentation
 
-- [Operator Runbook](docs/operator-runbook.md) - End-to-end profile/agent/OAuth/queue operations guide
+- [Operator Runbook](docs/operator-runbook.md) - End-to-end profile/agent/auth-sync/queue operations guide
 - [Configuration Guide](docs/configuration.md) - All configuration options
 - [Development Mode](docs/development-mode.md) - Build from source
 - [Security Architecture](docs/security.md) - Security details
@@ -179,7 +179,9 @@ make install
 # Reconcile only Cloudflare tunnel/service (if enabled in inventory)
 make cloudflare
 
-# Interactive OAuth for Codex provider
+# Non-interactive Codex credential sync
+make auth-sync PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+# legacy alias (same behavior)
 make oauth-login PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
 
 # Validate full flow

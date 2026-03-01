@@ -1,5 +1,5 @@
 ---
-title: Operator Runbook (Profiles, Agents, OAuth, Queues)
+title: Operator Runbook (Profiles, Agents, Auth Sync, Queues)
 summary: End-to-end step-by-step guide to deploy, operate, extend, and troubleshoot multi-profile OpenClaw with Stage 2 control-plane.
 ---
 
@@ -10,7 +10,7 @@ This runbook is the canonical step-by-step guide to:
 - Install and reconcile OpenClaw with Ansible.
 - Operate multi-profile gateways (`dev-main`, `andrea`, and new profiles).
 - Operate Stage 2 control-plane (`full` and `lite`).
-- Login providers (OpenAI Codex OAuth) per profile.
+- Sync OpenAI Codex credentials per profile.
 - Create new profiles and new agents safely.
 - Route Telegram traffic to agents and validate queue execution.
 
@@ -120,7 +120,9 @@ make install ENV=dev LIMIT=zennook
 # 4) Optional Cloudflare reconcile
 make cloudflare ENV=dev LIMIT=zennook
 
-# 5) OAuth login (interactive browser flow)
+# 5) Credential sync (non-interactive)
+make auth-sync ENV=dev LIMIT=zennook PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+# legacy alias
 make oauth-login ENV=dev LIMIT=zennook PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
 
 # 6) Run smoke tests
@@ -133,42 +135,35 @@ Equivalent direct Ansible command:
 ansible-playbook -i inventories/dev/hosts.yml playbooks/enterprise.yml --ask-become-pass --limit zennook
 ```
 
-## 4. Provider Login (OpenAI Codex OAuth)
+## 4. Provider Auth Sync (OpenAI Codex)
 
-### 4.1 Why OAuth per profile
+### 4.1 Why sync per profile
 
-Auth state is profile-specific (`--profile <name>`).  
-If you run multiple profiles, log in once for each profile.
+Auth state is profile-specific (`--profile <name>`), and each profile has its own
+`auth-profiles.json` under its `agents/*/agent` directories.
 
-### 4.2 Standard login command
-
-```bash
-sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile dev-main models auth login --provider openai-codex
-sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile andrea   models auth login --provider openai-codex
-```
-
-### 4.3 OAuth flow details
-
-```mermaid
-sequenceDiagram
-  participant CLI as openclaw CLI
-  participant B as Browser
-  participant O as OpenAI OAuth
-  participant L as localhost:1455 callback
-  participant P as OpenClaw profile state
-
-  CLI->>B: Open authorize URL
-  B->>O: User signs in and approves
-  O->>L: Redirect with auth code
-  CLI->>P: Store OAuth credentials for profile
-  CLI-->>CLI: provider ready in this profile
-```
-
-### 4.4 Verify login
+### 4.2 Standard sync command
 
 ```bash
-sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile dev-main status --all
-sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile dev-main models list
+make auth-sync PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+```
+
+`make oauth-login` remains available as a compatibility alias and runs the same sync workflow.
+
+### 4.3 Credential sources
+
+By default:
+
+- `EFRA_CODEX_AUTH_DEFAULT=/home/efra/.codex/auth.json`
+- `EFRA_CODEX_AUTH_ANDREA=/home/efra/.codex/auth-andrea.json`
+
+If `/home/efra/.env` exists, `auth-sync` loads it first so these paths can be overridden.
+
+### 4.4 Verify auth/model state
+
+```bash
+sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile dev-main models status --probe
+sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile andrea models status --probe
 ```
 
 ## 5. Create a New Profile (Gateway + Optional Control-Plane)
@@ -253,7 +248,7 @@ sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile ops-lab status 
 ### 5.5 Login provider for new profile
 
 ```bash
-sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile ops-lab models auth login --provider openai-codex
+make auth-sync PROFILES="ops-lab" OAUTH_PROVIDER=openai-codex
 ```
 
 ## 6. Create a New Agent Inside an Existing Profile
@@ -430,14 +425,16 @@ Correct:
 sudo -u openclaw -H /home/openclaw/.local/bin/openclaw --profile dev-main doctor --fix
 ```
 
-### 10.3 OAuth command says no provider plugins found
+### 10.3 Auth sync cannot read Codex credentials
 
 Action:
 
-1. Ensure correct OpenClaw install/profile.
-2. Ensure bundled plugins path exists:
-   - `/home/openclaw/.openclaw/bundled-extensions`
-3. Prefer onboarding wizard for first-time provider setup if plugin state is inconsistent.
+1. Ensure `/home/efra/.codex/auth.json` exists.
+2. If using per-profile creds, ensure `/home/efra/.codex/auth-andrea.json` exists.
+3. If custom paths are needed, export them in `/home/efra/.env`:
+   - `EFRA_CODEX_AUTH_DEFAULT=...`
+   - `EFRA_CODEX_AUTH_ANDREA=...`
+4. Re-run `make auth-sync`.
 
 ### 10.4 Browser task hangs or no Telegram response
 
@@ -464,7 +461,7 @@ When adding profiles/agents:
 
 1. Update inventory + Vault.
 2. `make install`.
-3. Run OAuth login for target profiles.
+3. Run auth sync for target profiles.
 4. Run smoke checks.
 5. Validate Telegram E2E.
 6. Commit changes with docs + inventory + role/template updates together.
