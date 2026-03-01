@@ -1,6 +1,11 @@
 ---
 # Linux-specific system tools installation (apt-based)
 
+- name: Remove legacy NodeSource deb822 source file before apt operations
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/nodesource.sources
+    state: absent
+
 - name: Install essential system tools (Linux - apt)
   ansible.builtin.apt:
     name:

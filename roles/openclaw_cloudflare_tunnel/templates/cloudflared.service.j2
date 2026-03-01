@@ -1,0 +1,21 @@
+[Unit]
+Description=Cloudflare Tunnel ({{ openclaw_cloudflare_tunnel_name }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ openclaw_cloudflare_tunnel_run_user }}
+Group={{ openclaw_cloudflare_tunnel_run_group }}
+WorkingDirectory={{ openclaw_cloudflare_tunnel_workdir }}
+ExecStart=/usr/bin/cloudflared tunnel --config {{ openclaw_cloudflare_tunnel_config_path }} run
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+ReadWritePaths={{ openclaw_cloudflare_tunnel_workdir }}
+
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Lint](https://github.com/openclaw/openclaw-ansible/actions/workflows/lint.yml/badge.svg)](https://github.com/openclaw/openclaw-ansible/actions/workflows/lint.yml)
 [![Ansible](https://img.shields.io/badge/Ansible-2.14+-blue.svg)](https://www.ansible.com/)
-[![Multi-OS](https://img.shields.io/badge/OS-Debian%20%7C%20Ubuntu-orange.svg)](https://www.debian.org/)
+[![Multi-OS](https://img.shields.io/badge/OS-Debian%20%7C%20Ubuntu%20%7C%20Fedora-orange.svg)](https://www.debian.org/)
 
 Automated, hardened installation of [OpenClaw](https://github.com/openclaw/openclaw) with Docker and Tailscale VPN support for Debian/Ubuntu Linux.
 
@@ -148,16 +148,52 @@ ansible-playbook playbook.yml --ask-become-pass
 
 ## Documentation
 
+- [Operator Runbook](docs/operator-runbook.md) - End-to-end profile/agent/auth-sync/queue operations guide
 - [Configuration Guide](docs/configuration.md) - All configuration options
 - [Development Mode](docs/development-mode.md) - Build from source
 - [Security Architecture](docs/security.md) - Security details
 - [Technical Details](docs/architecture.md) - Architecture overview
+- [Enterprise Deployment](docs/enterprise-deployment.md) - Multi-profile deployment
+- [Stage 2 Control Plane](docs/control-plane-stage2.md) - NATS + NestJS full/lite package
+- [Cloudflare Tunnel Exposure](docs/cloudflare-tunnel.md) - Subdomain publishing for local services
+- [Operations Workflow](docs/operations-workflow.md) - Backup/purge/install with Makefile
 - [Troubleshooting](docs/troubleshooting.md) - Common issues
 - [Agent Guidelines](AGENTS.md) - AI agent instructions
 
+## Operations Workflow (Makefile)
+
+For repeatable day-2 operations (backup, clean reinstall, smoke checks), use:
+
+```bash
+cd openclaw-ansible
+
+# Backup current state
+make backup
+
+# Purge runtime state (requires explicit confirmation)
+make purge CONFIRM=1
+
+# Reinstall enterprise + stage2 control-plane
+make install
+
+# Reconcile only Cloudflare tunnel/service (if enabled in inventory)
+make cloudflare
+
+# Non-interactive Codex credential sync
+make auth-sync PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+# legacy alias (same behavior)
+make oauth-login PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+
+# Validate full flow
+make smoke
+
+# One-shot full cycle
+make reinstall CONFIRM=1
+```
+
 ## Requirements
 
-- Debian 11+ or Ubuntu 20.04+
+- Debian 11+ or Ubuntu 20.04+ or Fedora 40+
 - Root/sudo access
 - Internet connection
 
@@ -291,3 +327,21 @@ MIT - see [LICENSE](LICENSE)
 
 - OpenClaw: https://github.com/openclaw/openclaw
 - This installer: https://github.com/openclaw/openclaw-ansible/issues
+
+## Enterprise Multi-Environment Deployment
+
+For multi-node environments with profile isolation and model/provider routing, use:
+
+- `playbooks/enterprise.yml`
+- `inventories/dev|staging|prod|research`
+- `roles/openclaw_enterprise`
+- `run-enterprise-playbook.sh`
+
+Guide: `docs/enterprise-deployment.md`
+
+Android companion nodes are supported in this topology as gateway-paired WS nodes
+(inventory metadata group: `openclaw_mobile_nodes`; operational flow via
+`openclaw nodes pending|approve|status` on a gateway host).
+
+A dedicated `browser-login` agent is also included in enterprise profile examples:
+browser-only tool policy and `openclaw` managed browser profile for manual login flows.

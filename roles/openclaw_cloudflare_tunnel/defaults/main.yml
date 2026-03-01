@@ -1,0 +1,33 @@
+---
+openclaw_cloudflare_tunnel_enabled: false
+openclaw_cloudflare_tunnel_require_supported_os: true
+
+openclaw_cloudflare_tunnel_name: "openclaw-{{ inventory_hostname }}"
+openclaw_cloudflare_tunnel_service_name: "cloudflared-{{ openclaw_cloudflare_tunnel_name }}"
+
+openclaw_cloudflare_tunnel_run_user: "{{ ansible_user | default('openclaw') }}"
+openclaw_cloudflare_tunnel_run_group: "{{ ansible_user | default('openclaw') }}"
+
+openclaw_cloudflare_tunnel_workdir: >-
+  /home/{{ openclaw_cloudflare_tunnel_run_user }}/.openclaw-cloudflare/{{ openclaw_cloudflare_tunnel_name }}
+openclaw_cloudflare_tunnel_config_path: "{{ openclaw_cloudflare_tunnel_workdir }}/config.yml"
+openclaw_cloudflare_tunnel_credentials_file: >-
+  {{ openclaw_cloudflare_tunnel_workdir }}/{{ openclaw_cloudflare_tunnel_id }}.json
+
+openclaw_cloudflare_tunnel_id: ""
+openclaw_cloudflare_tunnel_credentials_json: ""
+openclaw_cloudflare_tunnel_manage_credentials_file: true
+openclaw_cloudflare_tunnel_metrics_port: 40500
+
+# List of public hostnames to expose through this tunnel.
+# Example:
+# openclaw_cloudflare_tunnel_ingress:
+#   - hostname: ingress.example.com
+#     service: http://127.0.0.1:30101
+#   - hostname: grafana.example.com
+#     service: http://127.0.0.1:31001
+openclaw_cloudflare_tunnel_ingress: []
+
+# Optional one-time DNS reconcile.
+openclaw_cloudflare_tunnel_manage_dns: false
+openclaw_cloudflare_tunnel_dns_tunnel_name: "{{ openclaw_cloudflare_tunnel_name }}"

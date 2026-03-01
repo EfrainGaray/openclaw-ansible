@@ -1,0 +1,129 @@
+---
+openclaw_install_mode: release
+openclaw_enterprise_enabled: true
+openclaw_rollout_serial: 1
+openclaw_ignore_unreachable: true
+openclaw_max_fail_percentage: 100
+openclaw_enterprise_profiles:
+  - name: dev-main
+    gateway_port: 19011
+    gateway_bind: loopback
+    browser:
+      enabled: true
+      defaultProfile: openclaw
+    state_dir: /home/openclaw/.openclaw-dev-main
+    config_path: /home/openclaw/.openclaw-dev-main/openclaw.json
+    workspace_root: /home/openclaw/.openclaw-dev-main/workspace
+    model_primary: openai/gpt-5-mini
+    model_fallbacks:
+      - anthropic/claude-sonnet-4-5
+      - openai/gpt-5.2
+    tools_profile: coding
+    sandbox_mode: non-main
+    sandbox_scope: session
+    agents:
+      - id: main
+        default: true
+        workspace: /home/openclaw/.openclaw-dev-main/workspace
+      - id: research
+        workspace: /home/openclaw/.openclaw-dev-main/workspace-research
+        tools:
+          profile: coding
+      - id: browser-login
+        workspace: /home/openclaw/.openclaw-dev-main/workspace-browser-login
+        sandbox:
+          mode: "off"
+        tools:
+          profile: full
+          allow:
+            - browser
+      - id: coolify-ops
+        workspace: /home/openclaw/.openclaw-dev-main/workspace-coolify-ops
+        tools:
+          profile: coding
+    bindings: []
+    env:
+      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_dev_main | default('replace-me-dev-main-gateway-token') }}"
+      OPENAI_API_KEY: "{{ vault_openai_api_key_dev | default('') }}"
+      ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_dev | default('') }}"
+
+  - name: andrea
+    gateway_port: 19031
+    gateway_bind: loopback
+    state_dir: /home/openclaw/.openclaw-andrea
+    config_path: /home/openclaw/.openclaw-andrea/openclaw.json
+    workspace_root: /home/openclaw/.openclaw-andrea/workspace
+    model_primary: openai/gpt-5-mini
+    model_fallbacks:
+      - anthropic/claude-sonnet-4-5
+    tools_profile: messaging
+    sandbox_mode: non-main
+    sandbox_scope: session
+    agents:
+      - id: main
+        default: true
+        workspace: /home/openclaw/.openclaw-andrea/workspace
+    bindings: []
+    env:
+      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_andrea | default('replace-me-andrea-gateway-token') }}"
+      OPENAI_API_KEY: "{{ vault_openai_api_key_dev | default('') }}"
+      ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_dev | default('') }}"
+
+# Stage 2 control-plane package (NATS + NestJS microservices)
+openclaw_control_plane_enabled: true
+openclaw_control_plane_manage_stack: true
+openclaw_control_plane_profiles:
+  - name: efra-core
+    mode: full
+    gateway_profile: dev-main
+    project_dir: /home/efra/openclaw-control-plane/efra-core
+    ingress_port: 30101
+    control_api_port: 39101
+    grafana_port: 31001
+    prometheus_port: 39091
+    uptime_kuma_port: 31081
+    telegram_bot_token: "{{ vault_telegram_bot_token_efra_core | default('') }}"
+    telegram_default_chat_id: "{{ vault_telegram_default_chat_id_efra_core | default('') }}"
+    worker_exec_mode: openclaw
+    openclaw_env_file: /etc/openclaw/secrets/dev-main.env
+    openclaw_gateway_token: "{{ vault_openclaw_gateway_token_dev_main | default('replace-me-dev-main-gateway-token') }}"
+    postgres_password: "{{ vault_openclaw_cp_postgres_password_efra_core | default('efra-core-postgres-local') }}"
+    nats_user: queue
+    nats_password: "{{ vault_openclaw_cp_nats_password_efra_core | default('efra-core-nats-local') }}"
+
+  - name: andrea
+    mode: lite
+    gateway_profile: andrea
+    project_dir: /home/efra/openclaw-control-plane/andrea
+    ingress_port: 30111
+    control_api_port: 39111
+    telegram_bot_token: "{{ vault_telegram_bot_token_andrea | default('') }}"
+    telegram_default_chat_id: "{{ vault_telegram_default_chat_id_andrea | default('') }}"
+    postgres_password: "{{ vault_openclaw_cp_postgres_password_andrea | default('andrea-postgres-local') }}"
+    nats_user: queue
+    nats_password: "{{ vault_openclaw_cp_nats_password_andrea | default('andrea-nats-local') }}"
+
+# Optional: expose local loopback services via Cloudflare Tunnel subdomains.
+# This host uses a dedicated tunnel for openclaw-ansible services.
+openclaw_cloudflare_domain: "hegga.cl"
+openclaw_cloudflare_tunnel_enabled: "{{ inventory_hostname == 'zennook' }}"
+openclaw_cloudflare_tunnel_name: "openclaw-zennook"
+openclaw_cloudflare_tunnel_run_user: efra
+openclaw_cloudflare_tunnel_run_group: efra
+openclaw_cloudflare_tunnel_id: "68554472-f797-431c-bfa3-42480ea7e5c6"
+openclaw_cloudflare_tunnel_manage_credentials_file: false
+openclaw_cloudflare_tunnel_credentials_file: "/home/efra/.cloudflared/68554472-f797-431c-bfa3-42480ea7e5c6.json"
+openclaw_cloudflare_tunnel_manage_dns: false
+openclaw_cloudflare_tunnel_ingress:
+  - hostname: "dev-main-dashboard.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:19011"
+  - hostname: "efra-core-ingress.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:30101"
+  - hostname: "efra-core-control.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:39101"
+  - hostname: "efra-core-grafana.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:31001"
+  - hostname: "andrea-ingress.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:30111"
+  - hostname: "andrea-control.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:39111"

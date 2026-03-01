@@ -1,0 +1,154 @@
+---
+- name: Validate enterprise profile list is present
+  ansible.builtin.assert:
+    that:
+      - openclaw_enterprise_profiles | length > 0
+    fail_msg: "openclaw_enterprise_enabled=true requires openclaw_enterprise_profiles with at least one profile."
+
+- name: Validate required profile keys
+  ansible.builtin.assert:
+    that:
+      - profile.name is defined
+      - profile.name | length > 0
+      - profile.gateway_port is defined
+      - profile.gateway_port | int > 0
+    fail_msg: "Each profile must define non-empty name and positive gateway_port."
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  no_log: true
+
+- name: Validate unique enterprise profile names
+  ansible.builtin.assert:
+    that:
+      - (openclaw_enterprise_profiles | map(attribute='name') | list | unique | length) ==
+        (openclaw_enterprise_profiles | length)
+    fail_msg: "Each profile name must be unique."
+
+- name: Validate unique enterprise gateway ports
+  ansible.builtin.assert:
+    that:
+      - (openclaw_enterprise_profiles | map(attribute='gateway_port') | list | unique | length) ==
+        (openclaw_enterprise_profiles | length)
+    fail_msg: "Each profile gateway_port must be unique."
+
+- name: Ensure secrets directory exists
+  ansible.builtin.file:
+    path: "{{ openclaw_enterprise_secret_dir }}"
+    state: directory
+    owner: root
+    group: "{{ openclaw_user }}"
+    mode: '0750'
+
+- name: Check OpenClaw binary exists for enterprise services
+  ansible.builtin.stat:
+    path: "{{ openclaw_enterprise_openclaw_bin }}"
+  register: openclaw_enterprise_bin
+  when: openclaw_enterprise_manage_services | bool
+
+- name: Fail when OpenClaw binary is missing
+  ansible.builtin.fail:
+    msg: >-
+      OpenClaw binary not found at {{ openclaw_enterprise_openclaw_bin }}.
+      Ensure role 'openclaw' completed successfully before enabling enterprise services.
+  when:
+    - openclaw_enterprise_manage_services | bool
+    - not openclaw_enterprise_bin.stat.exists
+
+- name: Ensure profile state directory exists
+  ansible.builtin.file:
+    path: "{{ profile.state_dir | default(openclaw_home ~ '/.openclaw-' ~ profile.name) }}"
+    state: directory
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0755'
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+
+- name: Ensure profile workspace directory exists
+  ansible.builtin.file:
+    path: >-
+      {{
+        profile.workspace_root
+        | default((profile.state_dir | default(openclaw_home ~ '/.openclaw-' ~ profile.name)) ~ '/workspace')
+      }}
+    state: directory
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0755'
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+
+- name: Validate required secret keys in profile env
+  ansible.builtin.assert:
+    that:
+      - profile.env is defined
+      - profile.env.OPENCLAW_GATEWAY_TOKEN is defined
+      - profile.env.OPENCLAW_GATEWAY_TOKEN | length > 0
+      - >-
+        (not (openclaw_enterprise_require_provider_api_keys | bool)) or
+        (profile.env.OPENAI_API_KEY is defined and profile.env.OPENAI_API_KEY | length > 0)
+      - >-
+        (not (openclaw_enterprise_require_provider_api_keys | bool)) or
+        (profile.env.ANTHROPIC_API_KEY is defined and profile.env.ANTHROPIC_API_KEY | length > 0)
+    fail_msg: >-
+      Profile {{ profile.name }} must define env.OPENCLAW_GATEWAY_TOKEN.
+      OPENAI/ANTHROPIC keys are required only when
+      openclaw_enterprise_require_provider_api_keys=true.
+  when: openclaw_enterprise_require_secrets | bool
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  no_log: true
+
+- name: Render enterprise profile config
+  ansible.builtin.template:
+    src: openclaw-profile.json.j2
+    dest: "{{ profile.config_path | default((profile.state_dir | default(openclaw_home ~ '/.openclaw-' ~ profile.name)) ~ '/openclaw.json') }}"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0640'
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  notify: Restart enterprise gateways
+
+- name: Render per-profile secret environment file
+  ansible.builtin.template:
+    src: profile.env.j2
+    dest: "{{ openclaw_enterprise_secret_dir }}/{{ profile.name }}.env"
+    owner: root
+    group: "{{ openclaw_user }}"
+    mode: '0640'
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  notify: Restart enterprise gateways
+  no_log: true
+
+- name: Render per-profile systemd unit
+  ansible.builtin.template:
+    src: openclaw-gateway-profile.service.j2
+    dest: "/etc/systemd/system/openclaw-gateway-{{ profile.name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  when: openclaw_enterprise_manage_services | bool
+  notify:
+    - Reload systemd daemon
+    - Restart enterprise gateways
+
+- name: Ensure enterprise gateway services are enabled and started
+  ansible.builtin.systemd:
+    name: "openclaw-gateway-{{ profile.name }}"
+    enabled: true
+    state: started
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  when: openclaw_enterprise_manage_services | bool

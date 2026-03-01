@@ -1,0 +1,34 @@
+[Unit]
+Description=OpenClaw Gateway ({{ profile.name }})
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ openclaw_user }}
+Group={{ openclaw_user }}
+WorkingDirectory={{ openclaw_home }}
+
+EnvironmentFile={{ openclaw_enterprise_secret_dir }}/{{ profile.name }}.env
+Environment="PNPM_HOME={{ openclaw_home }}/.local/share/pnpm"
+Environment="PATH={{ openclaw_home }}/.local/bin:{{ openclaw_home }}/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin"
+Environment="HOME={{ openclaw_home }}"
+Environment="XDG_RUNTIME_DIR=/run/user/{{ openclaw_uid_value | default('1000') }}"
+
+ExecStart={{ openclaw_enterprise_openclaw_bin }} --profile {{ profile.name }} gateway --bind {{ profile.gateway_bind | default('loopback') }} --port {{ profile.gateway_port }}
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths={{ profile.state_dir | default(openclaw_home ~ '/.openclaw-' ~ profile.name) }}
+ReadWritePaths={{ openclaw_home }}/.local
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openclaw-{{ profile.name }}
+
+[Install]
+WantedBy=multi-user.target

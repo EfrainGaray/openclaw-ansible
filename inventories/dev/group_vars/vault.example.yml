@@ -1,0 +1,21 @@
+---
+vault_openclaw_gateway_token_dev_main: "replace-with-temp-token-dev-main"
+vault_openclaw_gateway_token_andrea: "replace-with-temp-token-andrea"
+vault_openai_api_key_dev: "replace-with-temp-openai-key-dev"
+vault_anthropic_api_key_dev: "replace-with-temp-anthropic-key-dev"
+
+# Stage 2 control-plane secrets
+vault_openclaw_cp_postgres_password_efra_core: "replace-with-strong-password"
+vault_openclaw_cp_nats_password_efra_core: "replace-with-strong-password"
+vault_telegram_bot_token_efra_core: "replace-with-bot-token"
+vault_telegram_default_chat_id_efra_core: "replace-with-chat-id"
+
+vault_openclaw_cp_postgres_password_andrea: "replace-with-strong-password"
+vault_openclaw_cp_nats_password_andrea: "replace-with-strong-password"
+vault_telegram_bot_token_andrea: "replace-with-bot-token"
+vault_telegram_default_chat_id_andrea: "replace-with-chat-id"
+
+# Cloudflare Tunnel secrets
+vault_cloudflare_tunnel_id: "replace-with-tunnel-uuid"
+vault_cloudflare_tunnel_credentials_json: |
+  {"AccountTag":"replace","TunnelSecret":"replace","TunnelID":"replace","TunnelName":"replace"}

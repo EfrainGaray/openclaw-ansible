@@ -1,0 +1,58 @@
+{
+  "gateway": {
+    "mode": "local",
+    "port": {{ profile.gateway_port }},
+    "bind": "{{ profile.gateway_bind | default('loopback') }}",
+    "auth": {
+      "mode": "token",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
+    }
+  },
+  "session": {
+    "dmScope": "{{ profile.dm_scope | default('per-account-channel-peer') }}"
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "{{ profile.workspace_root | default((profile.state_dir | default(openclaw_home ~ '/.openclaw-' ~ profile.name)) ~ '/workspace') }}",
+      "maxConcurrent": {{ profile.max_concurrent | default(4) }},
+      "contextTokens": {{ profile.context_tokens | default(200000) }},
+      "models": {{ (profile.model_catalog | default(openclaw_enterprise_default_models)) | to_nice_json(indent=6) }},
+      "model": {
+        "primary": "{{ profile.model_primary | default('anthropic/claude-sonnet-4-5') }}",
+        "fallbacks": {{ profile.model_fallbacks | default(['openai/gpt-5.2', 'openai/gpt-5-mini']) | to_json }}
+      },
+      "sandbox": {
+        "mode": "{{ profile.sandbox_mode | default('non-main') }}",
+        "scope": "{{ profile.sandbox_scope | default('session') }}"
+      }
+    },
+    "list": {{ profile.agents | default([]) | to_nice_json(indent=4) }}
+  },
+  "tools": {
+    "profile": "{{ profile.tools_profile | default('coding') }}"
+  },
+  "bindings": {{ profile.bindings | default([]) | to_nice_json(indent=2) }},
+{% if profile.browser is defined %}
+  "browser": {{ profile.browser | to_nice_json(indent=2) }},
+{% endif %}
+  "auth": {
+    "profiles": {{ profile.auth_profiles | default({
+      'openai:primary': {'provider': 'openai', 'mode': 'api_key'},
+      'openai:secondary': {'provider': 'openai', 'mode': 'api_key'},
+      'anthropic:primary': {'provider': 'anthropic', 'mode': 'api_key'},
+      'anthropic:secondary': {'provider': 'anthropic', 'mode': 'api_key'}
+    }) | to_nice_json(indent=4) }},
+    "order": {{ profile.auth_order | default({
+      'openai': ['openai:primary', 'openai:secondary'],
+      'anthropic': ['anthropic:primary', 'anthropic:secondary']
+    }) | to_nice_json(indent=4) }}
+  },
+  "logging": {
+    "level": "{{ profile.logging_level | default('info') }}",
+    "consoleLevel": "{{ profile.console_level | default('info') }}",
+    "redactSensitive": "tools"
+  },
+  "diagnostics": {
+    "enabled": {{ profile.diagnostics_enabled | default(true) | to_json }}
+  }
+}

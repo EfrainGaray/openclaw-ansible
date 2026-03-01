@@ -1,0 +1,41 @@
+---
+openclaw_install_mode: release
+openclaw_enterprise_enabled: true
+openclaw_enterprise_profiles:
+  - name: stg-main
+    gateway_port: 19111
+    gateway_bind: loopback
+    browser:
+      enabled: true
+      defaultProfile: openclaw
+    state_dir: /home/openclaw/.openclaw-stg-main
+    config_path: /home/openclaw/.openclaw-stg-main/openclaw.json
+    workspace_root: /home/openclaw/.openclaw-stg-main/workspace
+    model_primary: anthropic/claude-sonnet-4-5
+    model_fallbacks:
+      - openai/gpt-5.2
+      - openai/gpt-5-mini
+    tools_profile: coding
+    sandbox_mode: non-main
+    sandbox_scope: session
+    agents:
+      - id: main
+        default: true
+        workspace: /home/openclaw/.openclaw-stg-main/workspace
+      - id: ops
+        workspace: /home/openclaw/.openclaw-stg-main/workspace-ops
+        tools:
+          profile: messaging
+      - id: browser-login
+        workspace: /home/openclaw/.openclaw-stg-main/workspace-browser-login
+        sandbox:
+          mode: "off"
+        tools:
+          profile: full
+          allow:
+            - browser
+    bindings: []
+    env:
+      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_stg_main | default('') }}"
+      OPENAI_API_KEY: "{{ vault_openai_api_key_stg | default('') }}"
+      ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_stg | default('') }}"

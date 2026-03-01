@@ -1,0 +1,106 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222", "--user", "${NATS_USER}", "--pass", "${NATS_PASSWORD}"]
+    restart: unless-stopped
+    volumes:
+      - ./data/nats:/data
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  ingress:
+    build:
+      context: {{ openclaw_control_plane_runtime_root }}/source
+      dockerfile: Dockerfile
+      args:
+        SERVICE: ingress
+    env_file: .env
+    environment:
+      HTTP_PORT: 3000
+      METRICS_PORT: 9401
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - postgres
+    ports:
+      - "127.0.0.1:{{ profile.ingress_port | default(30111) }}:3000"
+
+  router:
+    build:
+      context: {{ openclaw_control_plane_runtime_root }}/source
+      dockerfile: Dockerfile
+      args:
+        SERVICE: router
+    env_file: .env
+    environment:
+      METRICS_PORT: 9402
+      ROUTER_FORCED_AGENT: main
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - postgres
+
+  worker-main:
+    build:
+      context: {{ openclaw_control_plane_runtime_root }}/source
+      dockerfile: Dockerfile
+      args:
+        SERVICE: worker
+    env_file: .env
+    environment:
+      METRICS_PORT: 9411
+      WORKER_AGENT_ID: main
+      WORKER_EXEC_MODE: ${WORKER_EXEC_MODE}
+      OPENCLAW_BIN: ${OPENCLAW_BIN}
+      OPENCLAW_HOME: ${OPENCLAW_HOME}
+      OPENCLAW_ENV_FILE: ${OPENCLAW_ENV_FILE}
+      OPENCLAW_TIMEOUT_MS: ${OPENCLAW_TIMEOUT_MS}
+      OPENCLAW_BUNDLED_PLUGINS_DIR: ${OPENCLAW_BUNDLED_PLUGINS_DIR}
+{% if profile.worker_exec_mode | default('stub') == 'openclaw' %}
+    user: "${OPENCLAW_UID}:${OPENCLAW_GID}"
+    volumes:
+      - /home/openclaw:/home/openclaw
+{% endif %}
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - postgres
+
+  broker:
+    build:
+      context: {{ openclaw_control_plane_runtime_root }}/source
+      dockerfile: Dockerfile
+      args:
+        SERVICE: broker
+    env_file: .env
+    environment:
+      METRICS_PORT: 9403
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - postgres
+
+  control-api:
+    build:
+      context: {{ openclaw_control_plane_runtime_root }}/source
+      dockerfile: Dockerfile
+      args:
+        SERVICE: control-api
+    env_file: .env
+    environment:
+      HTTP_PORT: 39090
+      METRICS_PORT: 9405
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - postgres
+    ports:
+      - "127.0.0.1:{{ profile.control_api_port | default(39111) }}:39090"

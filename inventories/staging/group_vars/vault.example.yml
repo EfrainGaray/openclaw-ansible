@@ -1,0 +1,4 @@
+---
+vault_openclaw_gateway_token_stg_main: "replace-with-temp-token-stg-main"
+vault_openai_api_key_stg: "replace-with-temp-openai-key-stg"
+vault_anthropic_api_key_stg: "replace-with-temp-anthropic-key-stg"

@@ -1,0 +1,14 @@
+---
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart enterprise gateways
+  ansible.builtin.systemd:
+    name: "openclaw-gateway-{{ profile.name }}"
+    state: restarted
+    enabled: true
+  loop: "{{ openclaw_enterprise_profiles }}"
+  loop_control:
+    loop_var: profile
+  when: openclaw_enterprise_manage_services | bool

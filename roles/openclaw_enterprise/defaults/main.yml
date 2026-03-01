@@ -1,0 +1,47 @@
+---
+openclaw_enterprise_enabled: false
+openclaw_enterprise_manage_services: true
+openclaw_enterprise_require_secrets: true
+openclaw_enterprise_require_provider_api_keys: false
+openclaw_enterprise_secret_dir: /etc/openclaw/secrets
+openclaw_enterprise_openclaw_bin: "{{ openclaw_home }}/.local/bin/openclaw"
+
+# Example profile object fields:
+# - name: prod-main
+#   gateway_port: 18789
+#   gateway_bind: loopback
+#   state_dir: /home/openclaw/.openclaw-prod-main
+#   config_path: /home/openclaw/.openclaw-prod-main/openclaw.json
+#   workspace_root: /home/openclaw/.openclaw-prod-main/workspace
+#   env:
+#     OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_prod_main }}"
+#     OPENAI_API_KEY: "{{ vault_openai_api_key_prod }}"
+#     ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_prod }}"
+#   agents:
+#     - id: main
+#       default: true
+#       workspace: /home/openclaw/.openclaw-prod-main/workspace
+#     - id: ops
+#       workspace: /home/openclaw/.openclaw-prod-main/workspace-ops
+#       tools:
+#         profile: messaging
+#   bindings: []
+openclaw_enterprise_profiles: []
+
+openclaw_enterprise_default_models:
+  "openai/gpt-5.2":
+    alias: openai-premium
+    params:
+      temperature: 0.2
+  "openai/gpt-5-mini":
+    alias: openai-fast
+    params:
+      temperature: 0.1
+  "anthropic/claude-opus-4-6":
+    alias: anthropic-premium
+    params:
+      temperature: 0.2
+  "anthropic/claude-sonnet-4-5":
+    alias: anthropic-fast
+    params:
+      temperature: 0.1

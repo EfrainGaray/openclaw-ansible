@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: nats
+    static_configs:
+      - targets: ['nats-exporter:7777']
+
+  - job_name: ingress
+    static_configs:
+      - targets: ['ingress:9401']
+
+  - job_name: router
+    static_configs:
+      - targets: ['router:9402']
+
+  - job_name: broker
+    static_configs:
+      - targets: ['broker:9403']
+
+  - job_name: worker-main
+    static_configs:
+      - targets: ['worker-main:9411']
+
+  - job_name: control-api
+    static_configs:
+      - targets: ['control-api:9405']
+
+{% if profile.mode == 'full' %}
+  - job_name: worker-research
+    static_configs:
+      - targets: ['worker-research:9412']
+
+  - job_name: worker-browser-login
+    static_configs:
+      - targets: ['worker-browser-login:9413']
+
+  - job_name: worker-coolify-ops
+    static_configs:
+      - targets: ['worker-coolify-ops:9414']
+{% endif %}
