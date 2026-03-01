@@ -39,7 +39,7 @@ openclaw_enterprise_profiles:
             - browser
     bindings: []
     env:
-      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_dev_main | default('') }}"
+      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_dev_main | default('tmp-dev-main-cfb2f8fdbd9144a88f1ec5a266') }}"
       OPENAI_API_KEY: "{{ vault_openai_api_key_dev | default('') }}"
       ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_dev | default('') }}"
 
@@ -61,7 +61,7 @@ openclaw_enterprise_profiles:
         workspace: /home/openclaw/.openclaw-andrea/workspace
     bindings: []
     env:
-      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_andrea | default('') }}"
+      OPENCLAW_GATEWAY_TOKEN: "{{ vault_openclaw_gateway_token_andrea | default('tmp-andrea-7c53f22ab2e24c55bb9a2746ac') }}"
       OPENAI_API_KEY: "{{ vault_openai_api_key_dev | default('') }}"
       ANTHROPIC_API_KEY: "{{ vault_anthropic_api_key_dev | default('') }}"
 
