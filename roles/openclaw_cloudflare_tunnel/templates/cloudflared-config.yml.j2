@@ -1,0 +1,9 @@
+tunnel: {{ openclaw_cloudflare_tunnel_id }}
+credentials-file: {{ openclaw_cloudflare_tunnel_credentials_file }}
+metrics: 127.0.0.1:{{ openclaw_cloudflare_tunnel_metrics_port }}
+ingress:
+{% for route in openclaw_cloudflare_tunnel_ingress %}
+  - hostname: {{ route.hostname }}
+    service: {{ route.service }}
+{% endfor %}
+  - service: http_status:404

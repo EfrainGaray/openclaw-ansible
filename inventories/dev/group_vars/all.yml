@@ -95,3 +95,27 @@ openclaw_control_plane_profiles:
     postgres_password: "{{ vault_openclaw_cp_postgres_password_andrea | default('andrea-postgres-local') }}"
     nats_user: queue
     nats_password: "{{ vault_openclaw_cp_nats_password_andrea | default('andrea-nats-local') }}"
+
+# Optional: expose local loopback services via Cloudflare Tunnel subdomains.
+# Keep disabled until tunnel credentials and public domain are configured in vault.yml.
+openclaw_cloudflare_domain: "example.com"
+openclaw_cloudflare_tunnel_enabled: false
+openclaw_cloudflare_tunnel_name: "zennook-openclaw"
+openclaw_cloudflare_tunnel_run_user: efra
+openclaw_cloudflare_tunnel_run_group: efra
+openclaw_cloudflare_tunnel_id: "{{ vault_cloudflare_tunnel_id | default('') }}"
+openclaw_cloudflare_tunnel_credentials_json: "{{ vault_cloudflare_tunnel_credentials_json | default('') }}"
+openclaw_cloudflare_tunnel_manage_dns: false
+openclaw_cloudflare_tunnel_ingress:
+  - hostname: "dev-main-dashboard.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:19011"
+  - hostname: "efra-core-ingress.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:30101"
+  - hostname: "efra-core-control.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:39101"
+  - hostname: "efra-core-grafana.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:31001"
+  - hostname: "andrea-ingress.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:30111"
+  - hostname: "andrea-control.{{ openclaw_cloudflare_domain }}"
+    service: "http://127.0.0.1:39111"

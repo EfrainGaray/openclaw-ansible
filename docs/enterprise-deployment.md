@@ -13,12 +13,14 @@ This repository now includes an enterprise deployment path with:
 - Multi-provider, multi-model defaults (OpenAI + Anthropic)
 - Secret isolation via per-profile `EnvironmentFile`
 - Stage 2 control-plane package (`full`/`lite`) with NATS + NestJS routing
+- Optional Cloudflare Tunnel role for subdomain exposure of loopback services
 
 ## Files
 
 - Playbook: `playbooks/enterprise.yml`
 - Role: `roles/openclaw_enterprise`
 - Stage 2 role: `roles/openclaw_control_plane`
+- Cloudflare role: `roles/openclaw_cloudflare_tunnel`
 - Stage 2 services source: `control-plane/`
 - Inventories: `inventories/<env>/...`
 
@@ -64,6 +66,8 @@ Store credentials in Ansible Vault and reference them from `inventories/*/group_
 - `vault_openclaw_gateway_token_*`
 - `vault_openai_api_key_*` (optional when using OAuth/browser auth)
 - `vault_anthropic_api_key_*` (optional when using OAuth/browser auth)
+- `vault_cloudflare_tunnel_id` (optional when Cloudflare role is enabled)
+- `vault_cloudflare_tunnel_credentials_json` (optional when Cloudflare role is enabled)
 
 The role writes `/etc/openclaw/secrets/<profile>.env` with mode `0640`, owner `root`, group `openclaw`.
 
@@ -136,3 +140,4 @@ Then sign in manually in the managed browser profile. Do not share credentials w
 - Existing `playbook.yml` is unchanged for one-command installs.
 - Use `playbooks/enterprise.yml` for multi-node production topology.
 - Stage 2 queue orchestration and telemetry details: `docs/control-plane-stage2.md`.
+- Cloudflare exposure details: `docs/cloudflare-tunnel.md`.

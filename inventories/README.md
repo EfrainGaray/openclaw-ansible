@@ -23,6 +23,15 @@ Stage 2 control-plane knobs:
 - `openclaw_control_plane_manage_stack`
 - `openclaw_control_plane_profiles` (`mode: full|lite`)
 
+Cloudflare subdomain exposure knobs:
+
+- `openclaw_cloudflare_tunnel_enabled`
+- `openclaw_cloudflare_tunnel_name`
+- `openclaw_cloudflare_tunnel_id`
+- `openclaw_cloudflare_tunnel_credentials_json` (from vault)
+- `openclaw_cloudflare_tunnel_ingress` (list of `hostname` + `service`)
+- `openclaw_cloudflare_tunnel_manage_dns` (optional route reconcile)
+
 Example:
 
 ```bash

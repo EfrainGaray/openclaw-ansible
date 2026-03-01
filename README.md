@@ -154,6 +154,7 @@ ansible-playbook playbook.yml --ask-become-pass
 - [Technical Details](docs/architecture.md) - Architecture overview
 - [Enterprise Deployment](docs/enterprise-deployment.md) - Multi-profile deployment
 - [Stage 2 Control Plane](docs/control-plane-stage2.md) - NATS + NestJS full/lite package
+- [Cloudflare Tunnel Exposure](docs/cloudflare-tunnel.md) - Subdomain publishing for local services
 - [Operations Workflow](docs/operations-workflow.md) - Backup/purge/install with Makefile
 - [Troubleshooting](docs/troubleshooting.md) - Common issues
 - [Agent Guidelines](AGENTS.md) - AI agent instructions
@@ -173,6 +174,9 @@ make purge CONFIRM=1
 
 # Reinstall enterprise + stage2 control-plane
 make install
+
+# Reconcile only Cloudflare tunnel/service (if enabled in inventory)
+make cloudflare
 
 # Interactive OAuth for Codex provider
 make oauth-login PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex

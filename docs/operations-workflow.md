@@ -10,6 +10,7 @@ This repository provides a Makefile interface over `ops/*.sh` scripts:
 - `make backup`
 - `make purge CONFIRM=1`
 - `make install`
+- `make cloudflare`
 - `make oauth-login`
 - `make smoke`
 - `make reinstall CONFIRM=1`
@@ -28,6 +29,12 @@ Use:
 
 ```bash
 make oauth-login PROFILES="dev-main andrea" OAUTH_PROVIDER=openai-codex
+```
+
+Cloudflare reconcile (subdomain exposure only):
+
+```bash
+make cloudflare ENV=dev LIMIT=zennook
 ```
 
 ## Defaults

@@ -1,0 +1,9 @@
+---
+- name: Reconcile Cloudflare tunnel exposure
+  hosts: openclaw_gateway
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  roles:
+    - role: openclaw_cloudflare_tunnel
+      when: openclaw_cloudflare_tunnel_enabled | bool

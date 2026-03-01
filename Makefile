@@ -8,7 +8,7 @@ LIMIT ?= zennook
 PROFILES ?= dev-main andrea
 OAUTH_PROVIDER ?= openai-codex
 
-.PHONY: help backup purge install oauth-login smoke reinstall
+.PHONY: help backup purge install cloudflare oauth-login smoke reinstall
 
 help:
 	@echo "OpenClaw Ops Targets"
@@ -16,6 +16,7 @@ help:
 	@echo "  make backup                           Backup current OpenClaw + control-plane state"
 	@echo "  make purge CONFIRM=1                 Purge deployed state and containers"
 	@echo "  make install                          Install/reconcile enterprise + control-plane"
+	@echo "  make cloudflare                       Reconcile Cloudflare tunnel/service only"
 	@echo "  make oauth-login                      Run interactive OAuth login per profile"
 	@echo "  make smoke                            Run post-install smoke checks"
 	@echo "  make reinstall CONFIRM=1              backup + purge + install + smoke"
@@ -33,6 +34,9 @@ purge:
 
 install:
 	@ENV="$(ENV)" INVENTORY="$(INVENTORY)" LIMIT="$(LIMIT)" ./ops/install.sh
+
+cloudflare:
+	@ENV="$(ENV)" INVENTORY="$(INVENTORY)" LIMIT="$(LIMIT)" ./ops/cloudflare-reconcile.sh
 
 oauth-login:
 	@ENV="$(ENV)" INVENTORY="$(INVENTORY)" LIMIT="$(LIMIT)" PROFILES="$(PROFILES)" OAUTH_PROVIDER="$(OAUTH_PROVIDER)" ./ops/oauth-login.sh

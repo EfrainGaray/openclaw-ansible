@@ -67,6 +67,9 @@ Secrets (`inventories/<env>/group_vars/vault.yml`):
 - Grafana (`full` only): `http://127.0.0.1:<grafana_port>`
 - Prometheus (`full` only): `http://127.0.0.1:<prometheus_port>`
 
+You can publish these loopback endpoints through Cloudflare Tunnel subdomains by enabling
+`openclaw_cloudflare_tunnel_*` variables in inventory (see `docs/cloudflare-tunnel.md`).
+
 ## Packaging for other profiles
 
 To install this package on another profile, add one object to `openclaw_control_plane_profiles`.

@@ -30,3 +30,7 @@
       when:
         - openclaw_control_plane_enabled | bool
         - ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']
+    - role: openclaw_cloudflare_tunnel
+      when:
+        - openclaw_cloudflare_tunnel_enabled | bool
+        - ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']

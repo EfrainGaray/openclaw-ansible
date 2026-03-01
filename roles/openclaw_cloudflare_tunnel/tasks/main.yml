@@ -1,0 +1,149 @@
+---
+- name: Validate OS support for Cloudflare Tunnel role
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution in ['Debian', 'Ubuntu']
+    fail_msg: >-
+      openclaw_cloudflare_tunnel currently supports Debian/Ubuntu hosts only.
+      Set openclaw_cloudflare_tunnel_enabled=false on this host or extend the role for this OS.
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - openclaw_cloudflare_tunnel_require_supported_os | bool
+
+- name: Validate required Cloudflare Tunnel settings
+  ansible.builtin.assert:
+    that:
+      - openclaw_cloudflare_tunnel_name | length > 0
+      - openclaw_cloudflare_tunnel_id | length > 0
+      - openclaw_cloudflare_tunnel_credentials_json | length > 0
+      - openclaw_cloudflare_tunnel_ingress | length > 0
+    fail_msg: >-
+      Set openclaw_cloudflare_tunnel_id, openclaw_cloudflare_tunnel_credentials_json
+      and at least one openclaw_cloudflare_tunnel_ingress route before enabling the role.
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Validate Cloudflare ingress route schema
+  ansible.builtin.assert:
+    that:
+      - route.hostname is defined
+      - route.hostname | length > 0
+      - route.service is defined
+      - route.service | length > 0
+    fail_msg: "Each ingress route requires non-empty hostname and service."
+  loop: "{{ openclaw_cloudflare_tunnel_ingress }}"
+  loop_control:
+    loop_var: route
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Resolve Cloudflare apt codename
+  ansible.builtin.set_fact:
+    openclaw_cloudflare_tunnel_apt_codename: >-
+      {{ 'bookworm' if ansible_distribution_release == 'trixie' else ansible_distribution_release }}
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - ansible_distribution in ['Debian', 'Ubuntu']
+
+- name: Install Cloudflare Tunnel prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - lsb-release
+    state: present
+    update_cache: true
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - ansible_distribution in ['Debian', 'Ubuntu']
+
+- name: Install Cloudflare GPG key
+  ansible.builtin.get_url:
+    url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    dest: /usr/share/keyrings/cloudflare-main.gpg
+    mode: '0644'
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - ansible_distribution in ['Debian', 'Ubuntu']
+
+- name: Configure Cloudflare apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg]
+      https://pkg.cloudflare.com/cloudflared {{ openclaw_cloudflare_tunnel_apt_codename }} main
+    filename: cloudflared
+    state: present
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - ansible_distribution in ['Debian', 'Ubuntu']
+
+- name: Install cloudflared package
+  ansible.builtin.apt:
+    name: cloudflared
+    state: present
+    update_cache: true
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - ansible_distribution in ['Debian', 'Ubuntu']
+
+- name: Ensure Cloudflare tunnel working directory exists
+  ansible.builtin.file:
+    path: "{{ openclaw_cloudflare_tunnel_workdir }}"
+    state: directory
+    owner: "{{ openclaw_cloudflare_tunnel_run_user }}"
+    group: "{{ openclaw_cloudflare_tunnel_run_group }}"
+    mode: '0750'
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Write Cloudflare tunnel credentials file
+  ansible.builtin.copy:
+    dest: "{{ openclaw_cloudflare_tunnel_credentials_file }}"
+    content: "{{ openclaw_cloudflare_tunnel_credentials_json }}\n"
+    owner: "{{ openclaw_cloudflare_tunnel_run_user }}"
+    group: "{{ openclaw_cloudflare_tunnel_run_group }}"
+    mode: '0600'
+  no_log: true
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Render Cloudflare tunnel config
+  ansible.builtin.template:
+    src: cloudflared-config.yml.j2
+    dest: "{{ openclaw_cloudflare_tunnel_config_path }}"
+    owner: "{{ openclaw_cloudflare_tunnel_run_user }}"
+    group: "{{ openclaw_cloudflare_tunnel_run_group }}"
+    mode: '0640'
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Install Cloudflare tunnel systemd service unit
+  ansible.builtin.template:
+    src: cloudflared.service.j2
+    dest: "/etc/systemd/system/{{ openclaw_cloudflare_tunnel_service_name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Ensure Cloudflare tunnel service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ openclaw_cloudflare_tunnel_service_name }}"
+    daemon_reload: true
+    enabled: true
+    state: started
+  when: openclaw_cloudflare_tunnel_enabled | bool
+
+- name: Reconcile Cloudflare DNS routes for ingress hostnames
+  ansible.builtin.command:
+    cmd: >-
+      cloudflared tunnel route dns
+      {{ openclaw_cloudflare_tunnel_dns_tunnel_name }}
+      {{ route.hostname }}
+  register: openclaw_cloudflare_dns_route
+  changed_when: "'Added CNAME' in (openclaw_cloudflare_dns_route.stdout | default(''))"
+  failed_when: >-
+    openclaw_cloudflare_dns_route.rc != 0 and
+    ('already exists' not in ((openclaw_cloudflare_dns_route.stdout | default('')) | lower)) and
+    ('already exists' not in ((openclaw_cloudflare_dns_route.stderr | default('')) | lower))
+  loop: "{{ openclaw_cloudflare_tunnel_ingress }}"
+  loop_control:
+    loop_var: route
+  when:
+    - openclaw_cloudflare_tunnel_enabled | bool
+    - openclaw_cloudflare_tunnel_manage_dns | bool
