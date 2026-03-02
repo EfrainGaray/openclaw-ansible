@@ -1,0 +1,22 @@
+# USER.md - About Your Human
+
+- Name: {{ profile.user_profile.name | default('Efrain') }}
+- What to call them: {{ profile.user_profile.call | default('Efra') }}
+- Pronouns: {{ profile.user_profile.pronouns | default('') }}
+- Timezone: {{ profile.user_profile.timezone | default('America/Santiago') }}
+
+## Notes
+{% set notes = profile.user_profile.notes | default([]) %}
+{% if notes | length > 0 %}
+{% for note in notes %}
+- {{ note }}
+{% endfor %}
+{% else %}
+- Operator expects practical outcomes and minimal fluff.
+- Keep communication clear and actionable.
+{% endif %}
+
+## Response contract
+- Human-readable answers.
+- Use Markdown fenced code blocks for all code/commands/config snippets.
+- Separate findings, actions, and next steps clearly.

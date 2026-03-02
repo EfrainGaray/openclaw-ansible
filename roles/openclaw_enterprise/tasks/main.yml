@@ -81,6 +81,108 @@
   loop_control:
     loop_var: profile
 
+- name: Ensure per-agent workspace directories exist
+  ansible.builtin.file:
+    path: "{{ agent_workspace }}"
+    state: directory
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0755'
+  vars:
+    agent_workspace: >-
+      {{
+        item.1.workspace
+        | default(
+            item.0.workspace_root
+            | default((item.0.state_dir | default(openclaw_home ~ '/.openclaw-' ~ item.0.name)) ~ '/workspace')
+          )
+      }}
+  loop: "{{ openclaw_enterprise_profiles | subelements('agents', skip_missing=True) }}"
+
+- name: Seed AGENTS.md per agent workspace
+  ansible.builtin.template:
+    src: workspace-agents.md.j2
+    dest: "{{ agent_workspace }}/AGENTS.md"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0644'
+  vars:
+    profile: "{{ item.0 }}"
+    agent: "{{ item.1 }}"
+    agent_workspace: >-
+      {{
+        item.1.workspace
+        | default(
+            item.0.workspace_root
+            | default((item.0.state_dir | default(openclaw_home ~ '/.openclaw-' ~ item.0.name)) ~ '/workspace')
+          )
+      }}
+    agent_persona: "{{ (item.0.agent_personas | default([]) | selectattr('id', 'equalto', item.1.id) | list | first | default({})) }}"
+  loop: "{{ openclaw_enterprise_profiles | subelements('agents', skip_missing=True) }}"
+
+- name: Seed SOUL.md per agent workspace
+  ansible.builtin.template:
+    src: workspace-soul.md.j2
+    dest: "{{ agent_workspace }}/SOUL.md"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0644'
+  vars:
+    profile: "{{ item.0 }}"
+    agent: "{{ item.1 }}"
+    agent_workspace: >-
+      {{
+        item.1.workspace
+        | default(
+            item.0.workspace_root
+            | default((item.0.state_dir | default(openclaw_home ~ '/.openclaw-' ~ item.0.name)) ~ '/workspace')
+          )
+      }}
+    agent_persona: "{{ (item.0.agent_personas | default([]) | selectattr('id', 'equalto', item.1.id) | list | first | default({})) }}"
+  loop: "{{ openclaw_enterprise_profiles | subelements('agents', skip_missing=True) }}"
+
+- name: Seed IDENTITY.md per agent workspace
+  ansible.builtin.template:
+    src: workspace-identity.md.j2
+    dest: "{{ agent_workspace }}/IDENTITY.md"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0644'
+  vars:
+    profile: "{{ item.0 }}"
+    agent: "{{ item.1 }}"
+    agent_workspace: >-
+      {{
+        item.1.workspace
+        | default(
+            item.0.workspace_root
+            | default((item.0.state_dir | default(openclaw_home ~ '/.openclaw-' ~ item.0.name)) ~ '/workspace')
+          )
+      }}
+    agent_persona: "{{ (item.0.agent_personas | default([]) | selectattr('id', 'equalto', item.1.id) | list | first | default({})) }}"
+  loop: "{{ openclaw_enterprise_profiles | subelements('agents', skip_missing=True) }}"
+
+- name: Seed USER.md per agent workspace
+  ansible.builtin.template:
+    src: workspace-user.md.j2
+    dest: "{{ agent_workspace }}/USER.md"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_user }}"
+    mode: '0644'
+  vars:
+    profile: "{{ item.0 }}"
+    agent: "{{ item.1 }}"
+    agent_workspace: >-
+      {{
+        item.1.workspace
+        | default(
+            item.0.workspace_root
+            | default((item.0.state_dir | default(openclaw_home ~ '/.openclaw-' ~ item.0.name)) ~ '/workspace')
+          )
+      }}
+    agent_persona: "{{ (item.0.agent_personas | default([]) | selectattr('id', 'equalto', item.1.id) | list | first | default({})) }}"
+  loop: "{{ openclaw_enterprise_profiles | subelements('agents', skip_missing=True) }}"
+
 - name: Validate required secret keys in profile env
   ansible.builtin.assert:
     that:
